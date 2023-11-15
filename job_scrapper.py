@@ -34,11 +34,11 @@ def get_data_from_soup(soup: BeautifulSoup) -> list:
         return results
 
     for title in titles:
-        title_text = title.text
+        title_text = title.text.strip()
         title_link = title["href"]
 
         if title_text and title_link:
-            results.append([title_text.strip(), title_link])
+            results.append((title_text, title_link))
 
     return results
 
@@ -82,7 +82,7 @@ def collect_data(links: list | None) -> list:
             new_links = get_paging(soup)
             links.extend([link for link in new_links if link not in links])
 
-        result.append(data)
+        result.extend(data)
 
     return result
 
@@ -90,13 +90,12 @@ def collect_data(links: list | None) -> list:
 def save_as_csv(results: list) -> None:
     """function that tries to save results to file"""
     file_name = os.path.join(os.getcwd(), "jobs-" + str(time.time()) + ".csv")
-    csv_titles = ["TITLE", "LINK"]
 
     try:
         with open(file_name, "w", encoding="utf-8") as file:
             writer = csv.writer(file)
 
-            writer.writerow(csv_titles)
+            writer.writerow(["Title", "Link"])
             writer.writerows(results)
 
     except Exception as e:

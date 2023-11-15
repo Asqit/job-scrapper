@@ -1,8 +1,8 @@
-# root of the website: https://www.google.com/
-BASE_URL = "https://www.jobs.cz"
+# root of the website: https://www.google.com (NO ENDING SLASH!)
+BASE_URL = ""
 
 # root + additional params: https://www.google.com/search?hl=en&q=ee
-FULL_URL = "https://www.jobs.cz/prace/praha/is-it-vyvoj-aplikaci-a-systemu/?locality%5Bradius%5D=0"
+FULL_URL = ""
 
 from bs4 import BeautifulSoup
 import requests

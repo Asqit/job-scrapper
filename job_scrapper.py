@@ -1,8 +1,8 @@
 # root of the website: https://www.google.com/
-BASE_URL = ""
+BASE_URL = "https://www.jobs.cz"
 
 # root + additional params: https://www.google.com/search?hl=en&q=ee
-FULL_URL = ""
+FULL_URL = "https://www.jobs.cz/prace/praha/is-it-vyvoj-aplikaci-a-systemu/?locality%5Bradius%5D=0"
 
 from bs4 import BeautifulSoup
 import requests
@@ -84,7 +84,7 @@ def collect_data(links: list | None) -> list:
 
         result.append(data)
 
-    return data
+    return result
 
 
 def save_as_csv(results: list) -> None:
@@ -123,14 +123,12 @@ def init() -> None:
             "I advice you go and make yourself some beverage, since I am retard and concurrency is hard\n"
         )
         initial_soup = get_soup(FULL_URL)
-        initial_data = get_data_from_soup(initial_soup)
         links = get_paging(initial_soup)
 
         if links is None:
-            data = initial_data
+            data = get_data_from_soup(initial_soup)
         else:
             data = collect_data([link for link in links if link != FULL_URL])
-            data.extend(initial_data)
 
         save_as_csv(data)
 

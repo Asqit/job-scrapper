@@ -1,3 +1,5 @@
 *.csv
 env/
 *.txt
+.vscode/
+__pycache__/

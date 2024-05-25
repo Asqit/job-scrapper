@@ -7,6 +7,22 @@ import csv
 import os
 
 
+def print_error(error: str) -> None:
+    """
+    A Utility function used to print error messages in red color
+    """
+    print(f"\033[38;2;255;0;0m{error}\033[38;2;255;255;255m")
+
+
+def get_base_url(url: str) -> str:
+    """
+    A function that takes a URL and extracts the base URL
+    """
+    url_parts = urlsplit(url)
+
+    return url_parts.scheme + "://" + url_parts.netloc
+
+
 def save_as_csv(results: list, file_name: str) -> None:
     """
     A Utility function used to save the results as a CSV file
@@ -16,7 +32,7 @@ def save_as_csv(results: list, file_name: str) -> None:
         with open(file_name, "w", encoding="utf-8") as file:
             writer = csv.writer(file)
             writer.writerow(["Title", "Link"])
-            writer.writerows(row for row in results if any(row))
+            writer.writerows(row for row in results if any(row) or len(row) > 0)
     except Exception as e:
         print(f"Failed to save data as CSV, trying as TXT")
         fail_path = os.path.join(os.getcwd(), "failed.txt")
@@ -30,13 +46,6 @@ def save_as_csv(results: list, file_name: str) -> None:
             print(f"Results were saved in: {fail_path}")
     else:
         print(f"Results were saved in: {file_name}")
-
-
-def print_error(e: str) -> None:
-    """
-    A Utility function used to print error messages in red color
-    """
-    print(f"\033[38;2;255;0;0mUnexpected error occurred:\n{e}\033[38;2;255;255;255m")
 
 
 def get_soup(url: str) -> BeautifulSoup:
@@ -125,15 +134,6 @@ def collect_data(source_url: str, links: list | None) -> list:
     return results
 
 
-def get_base_url(url: str) -> str:
-    """
-    A function that takes a URL and extracts the base URL
-    """
-    url_parts = urlsplit(url)
-
-    return url_parts.scheme + "://" + url_parts.netloc
-
-
 def search_by_keywords(filename: str, keywords: list[str]) -> list[list[str]]:
     results = []
 
@@ -156,9 +156,9 @@ def search_by_keywords(filename: str, keywords: list[str]) -> list[list[str]]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode", help="Mode of operation", choices=["search", "scrape"]
-    )
+
+    modes = ["search", "scrape"]
+    parser.add_argument("--mode", help="Mode of operation", choices=modes)
     parser.add_argument("--url", help="Base URL to scrape data from")
     parser.add_argument("--keywords", help="Keywords to search for", nargs="*")
 
@@ -185,9 +185,14 @@ if __name__ == "__main__":
         print(f"Operation took: {end_delta:.2f} seconds")
 
     elif args.mode == "search":
-        results = search_by_keywords(args.url, args.keywords)
+        start_timestamp = time.perf_counter()
 
+        results = search_by_keywords(args.url, args.keywords)
         save_as_csv(results, "search_results.csv")
+
+        end_delta = time.perf_counter() - start_timestamp
+        print(f"Operation took: {end_delta:.2f} seconds")
     else:
-        print("Invalid mode")
+        print_error("Invalid usage of the script. Please provide correct arguments.")
+        print("see: python main.py --help")
         exit(1)

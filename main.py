@@ -1,3 +1,15 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
+#   Job Scraper
+#   A simple script that scrapes job listings from a website (jobs.cz)
+#   and saves the results in a CSV file.
+#
+#   The script can be used in two modes:
+#   - scrape: scrapes the data from the provided URL
+#   - search: searches the provided CSV file for the keywords
+#
+#   Author: Ondřej Tuček  (github.com/asqit)
+#   Date: 25.5.2024
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit
 import requests
@@ -63,14 +75,15 @@ def get_soup(url: str) -> BeautifulSoup:
     return soup
 
 
-def get_data_from_soup(soup: BeautifulSoup) -> list:
+def get_data_from_soup(soup: BeautifulSoup, link_class: str | None) -> list:
     """
     A function that takes a soup and retrieves a required data
     """
     results = []
 
-    # TODO: make more dynamic by grabbing as parameter
-    titles = soup.find_all("a", class_="link-primary SearchResultCard__titleLink")
+    titles = soup.find_all(
+        "a", class_=link_class or "link-primary SearchResultCard__titleLink"
+    )
 
     if titles is None or len(titles) == 0:
         return results
@@ -85,13 +98,12 @@ def get_data_from_soup(soup: BeautifulSoup) -> list:
     return results
 
 
-def get_pagination(soup: BeautifulSoup) -> list | None:
+def get_pagination(soup: BeautifulSoup, pagination_class: str | None) -> list | None:
     """
     A function that takes a soup and finds all links to next pages
     """
 
-    # TODO: make more dynamic by grabbing as parameter
-    pagination = soup.find_all("li", class_="Pagination__item")
+    pagination = soup.find_all("li", class_=pagination_class or "Pagination__item")
 
     if pagination is None or len(pagination) == 0:
         return None
@@ -108,7 +120,9 @@ def get_pagination(soup: BeautifulSoup) -> list | None:
     return results
 
 
-def collect_data(source_url: str, links: list | None) -> list:
+def collect_data(
+    source_url: str, links: list | None, class_names: tuple[str, str]
+) -> list:
     if links is None or len(links) == 0:
         return []
 
@@ -120,11 +134,11 @@ def collect_data(source_url: str, links: list | None) -> list:
         print(f"Collecting data from: {url}")
 
         soup = get_soup(url)
-        data = get_data_from_soup(soup)
+        data = get_data_from_soup(soup, class_names[0])
 
         last_link = links[-1]
         if link == last_link:
-            pagination = get_pagination(soup)
+            pagination = get_pagination(soup, class_names[1])
 
             if pagination is not None:
                 links.extend([p for p in pagination if p not in links])
@@ -159,8 +173,16 @@ if __name__ == "__main__":
 
     modes = ["search", "scrape"]
     parser.add_argument("--mode", help="Mode of operation", choices=modes)
-    parser.add_argument("--url", help="Base URL to scrape data from")
+    parser.add_argument("--url", help="Base URL to scrape data from", type=str)
     parser.add_argument("--keywords", help="Keywords to search for", nargs="*")
+
+    parser.add_argument(
+        "--title-class", help="The css class for title/link in the page", type=str
+    )
+
+    parser.add_argument(
+        "--pagination-class", help="The css class for pagination in the page", type=str
+    )
 
     args = parser.parse_args()
 
@@ -169,17 +191,24 @@ if __name__ == "__main__":
 
         print("Fetching HTML from the URL")
         init_soup = get_soup(args.url)
-        pagination = get_pagination(init_soup)
+        pagination = get_pagination(init_soup, args.pagination_class)
 
         if pagination is None:
-            data = get_data_from_soup(init_soup)
+            data = get_data_from_soup(init_soup, args.title_class)
         else:
             data = collect_data(
                 get_base_url(args.url),
                 [link for link in pagination if link != args.url],
+                (args.title_class, args.pagination_class),
             )
 
-        save_as_csv(data, "results.csv")
+        print(f"Collected {len(data)} results")
+        filename = input("(optional) Provide a filename to save the results:")
+
+        if filename is None or len(filename) == 0:
+            filename = f"{args.url.split('/')[-1]}_{time.time()}_results.csv"
+
+        save_as_csv(data, filename.split(".")[0] + ".csv")
 
         end_delta = time.perf_counter() - start_timestamp
         print(f"Operation took: {end_delta:.2f} seconds")
@@ -188,7 +217,14 @@ if __name__ == "__main__":
         start_timestamp = time.perf_counter()
 
         results = search_by_keywords(args.url, args.keywords)
-        save_as_csv(results, "search_results.csv")
+
+        print(f"Found {len(results)} results")
+        filename = input("(optional) Provide a filename to save the results:")
+
+        if filename is None or len(filename) == 0:
+            filename = f"{args.url}_{time.time()}_search_results.csv"
+
+        save_as_csv(results, filename.split(".")[0] + ".csv")
 
         end_delta = time.perf_counter() - start_timestamp
         print(f"Operation took: {end_delta:.2f} seconds")

@@ -13,7 +13,7 @@ To use the job scraper, follow these steps:
 2. Run the `main.py` script with the `search` mode and provide `url`. For example:
 
    ```bash
-   python main.py --mode scrape --url "https://sample-url.com/..."
+   python main.py --mode scrape --url "https://sample-url.com/..." --title-class "title title-link" --pagination-class "pagination-item"
    ```
 
 3. The script can also search the scraped results for keywords in the job title

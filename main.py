@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=#
 #   Job Scraper
 #   A simple script that scrapes job listings from a website (jobs.cz)
